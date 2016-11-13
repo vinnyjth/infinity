@@ -48,7 +48,7 @@ function reconnect()
                 tmr.stop(2)
                 print("Reconnected")
                 on_subscribe()
-            end),
+            end,
             function(client, reason)
                 print("failed reason: "..reason)
             end
