@@ -13,6 +13,8 @@ pwm.start(red)
 pwm.start(blue)
 pwm.start(green)
 
+error_state = 0
+
 function led(r, g, b)
     pwm.setduty(green, g)
     pwm.setduty(blue, b)
@@ -21,12 +23,43 @@ end
 
 led(512, 0, 0)
 
+function flash_error()
+    if error_state == 0 then
+        led(512, 0, 0)
+        error_state = 1
+    else
+        led(512, 0, 0)
+        error_state = 0
+    end
+end
+
+
 m = mqtt.Client("lightstrip-infinity", 120, "", "")
 
 m:lwt("/lwt", "offline", 0, 0)
 
+function reconnect()
+    print("Waiting for wifi")
+     if wifi.sta.status() == 5 and wifi.sta.getip() ~= nil then
+        print("Wifi Up")
+        tmr.stop(1)
+        tmr.stop(2)
+        m:connect("192.168.51.73", 1883, 0, on_subscribe,
+            function(client, reason) print("failed reason: "..reason) end
+        )
+    end
+end
+
 m:on("connect", function(client) print ("connected") end)
-m:on("offline", function(client) print ("offline") end)
+m:on("offline", function(client)
+    print ("offline")
+    tmr.alarm(1, 10000, tmr.ALARM_AUTO, function()
+        reconnect()
+    end)
+    tmr.alarm(2, 2000, tmr.ALARM_AUTO, function()
+        flash_error()
+    end)
+end)
 
 m:on("message", function(client, topic, data)
   print(topic .. ":" )
