@@ -42,10 +42,16 @@ function reconnect()
     print("Waiting for wifi")
      if wifi.sta.status() == 5 and wifi.sta.getip() ~= nil then
         print("Wifi Up")
-        tmr.stop(1)
-        tmr.stop(2)
-        m:connect("192.168.51.73", 1883, 0, on_subscribe,
-            function(client, reason) print("failed reason: "..reason) end
+        m:connect("192.168.51.73", 1883, 0,
+            function(client, reason)
+                tmr.stop(1)
+                tmr.stop(2)
+                print("Reconnected")
+                on_subscribe()
+            end),
+            function(client, reason)
+                print("failed reason: "..reason)
+            end
         )
     end
 end
